@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="512" y2="512" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#0b7ea3"/>
+      <stop offset="1" stop-color="#0a5f7a"/>
+    </linearGradient>
+    <linearGradient id="arrow" x1="120" y1="120" x2="400" y2="400" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#eaf6ff"/>
+      <stop offset="1" stop-color="#4bb4e6"/>
+    </linearGradient>
+  </defs>
+  <circle cx="256" cy="256" r="256" fill="url(#bg)"/>
+  <g fill="url(#arrow)">
+    <!-- Top-right curved arrow (clockwise) -->
+    <path d="M256 136
+             a120 120 0 0 1 104 60
+             l30 -18 l-6 92 l-84 -38 l30 -18
+             a80 80 0 0 0 -74 -40 z"/>
+    <!-- Bottom-right curved arrow -->
+    <path d="M376 256
+             a120 120 0 0 1 -60 104
+             l18 30 l-92 -6 l38 -84 l18 30
+             a80 80 0 0 0 40 -74 z"/>
+    <!-- Left curved arrow -->
+    <path d="M256 376
+             a120 120 0 0 1 -104 -60
+             l-30 18 l6 -92 l84 38 l-30 18
+             a80 80 0 0 0 74 40 z"/>
+  </g>
+</svg>

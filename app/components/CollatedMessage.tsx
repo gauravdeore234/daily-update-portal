@@ -2,24 +2,24 @@
 
 import { useState } from "react";
 import type { Team, UpdateRow } from "../types";
-import { buildCollatedMessage } from "@/lib/collate";
+import { buildGroupedMessages } from "@/lib/collate";
 
 type Props = {
   teams: Team[];
   updates: UpdateRow[];
 };
 
-// The PM's one-click artifact: the full collated message for ALL teams/people,
-// with a Copy All button.
+// Two separate WhatsApp-ready messages, each with its own Copy button:
+//   1. Developers + Testers
+//   2. PMs
 export default function CollatedMessage({ teams, updates }: Props) {
-  const [copied, setCopied] = useState(false);
-  const message = buildCollatedMessage({ teams, updates });
+  const [copiedKey, setCopiedKey] = useState<string | null>(null);
+  const groups = buildGroupedMessages({ teams, updates });
 
-  async function copyAll() {
+  async function copy(key: string, message: string) {
     try {
       await navigator.clipboard.writeText(message);
     } catch {
-      // Fallback for browsers/contexts without the async clipboard API.
       const ta = document.createElement("textarea");
       ta.value = message;
       ta.style.position = "fixed";
@@ -29,22 +29,31 @@ export default function CollatedMessage({ teams, updates }: Props) {
       document.execCommand("copy");
       document.body.removeChild(ta);
     }
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    setCopiedKey(key);
+    setTimeout(() => setCopiedKey((k) => (k === key ? null : k)), 2000);
   }
 
   return (
-    <div className="panel">
-      <div className="row between" style={{ marginBottom: 12 }}>
-        <strong>Collated WhatsApp message</strong>
-        <button className="btn small" style={{ background: "var(--green)" }} onClick={copyAll}>
-          {copied ? "✓ Copied all" : "Copy all"}
-        </button>
-      </div>
-      <div className="collated">{message}</div>
-      <p className="note">
-        Copies every team&apos;s updates as one message, ready to paste into WhatsApp.
+    <>
+      {groups.map((g) => (
+        <div className="panel" key={g.key}>
+          <div className="row between" style={{ marginBottom: 12 }}>
+            <strong>WhatsApp message — {g.label}</strong>
+            <button
+              className="btn small"
+              style={{ background: "var(--green)" }}
+              onClick={() => copy(g.key, g.message)}
+            >
+              {copiedKey === g.key ? "✓ Copied" : "Copy"}
+            </button>
+          </div>
+          <div className="collated">{g.message}</div>
+        </div>
+      ))}
+      <p className="note" style={{ marginTop: -4 }}>
+        Two messages: one for Developers + Testers, one for PMs. Copy each and
+        paste into WhatsApp.
       </p>
-    </div>
+    </>
   );
 }

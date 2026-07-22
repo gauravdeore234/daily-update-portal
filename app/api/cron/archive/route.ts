@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Resend } from "resend";
 import { getServerSupabase } from "@/lib/supabase";
-import { buildCollatedMessage } from "@/lib/collate";
+import { buildGroupedMessages } from "@/lib/collate";
 import { formatDateDay, todayKey } from "@/lib/time";
 
 export const dynamic = "force-dynamic";
@@ -36,10 +36,15 @@ export async function GET(req: NextRequest) {
     );
   }
 
-  const message = buildCollatedMessage({
+  const groups = buildGroupedMessages({
     teams: teams ?? [],
     updates: updates ?? [],
   });
+
+  // Both messages in one email, each under its group heading.
+  const message = groups
+    .map((g) => `===== ${g.label} =====\n\n${g.message}`)
+    .join("\n\n\n");
 
   const apiKey = process.env.RESEND_API_KEY;
   const to = process.env.ARCHIVE_EMAIL_TO;

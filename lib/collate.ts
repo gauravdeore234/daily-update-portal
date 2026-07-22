@@ -45,3 +45,38 @@ export function buildCollatedMessage({ teams, updates, date }: CollateInput): st
 
   return `${header}\n\n${sections.join("\n\n=====================\n\n")}`;
 }
+
+export type CollateGroup = { key: string; label: string; message: string };
+
+// A team belongs to the PM group if its name starts with "pm" (PM, PMs, pm…).
+function isPmTeam(name: string): boolean {
+  return name.trim().toLowerCase().startsWith("pm");
+}
+
+/**
+ * Split the day's updates into two WhatsApp messages:
+ *   1. Developers + Testers (everything that isn't a PM team)
+ *   2. PMs
+ * Used by both the Today tab (two Copy buttons) and the archive email.
+ */
+export function buildGroupedMessages({
+  teams,
+  updates,
+  date,
+}: CollateInput): CollateGroup[] {
+  const pmTeams = teams.filter((t) => isPmTeam(t.name));
+  const otherTeams = teams.filter((t) => !isPmTeam(t.name));
+
+  return [
+    {
+      key: "dev-test",
+      label: "Developers + Testers",
+      message: buildCollatedMessage({ teams: otherTeams, updates, date }),
+    },
+    {
+      key: "pm",
+      label: "PMs",
+      message: buildCollatedMessage({ teams: pmTeams, updates, date }),
+    },
+  ];
+}

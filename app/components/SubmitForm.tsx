@@ -1,9 +1,10 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { Member, Status, Team } from "../types";
 import NameCombobox from "./NameCombobox";
-import UpdateEditor from "./UpdateEditor";
+import UpdateEditor, { UpdateEditorHandle } from "./UpdateEditor";
+import { formatDateKey } from "@/lib/time";
 
 type Props = {
   teams: Team[];
@@ -19,8 +20,36 @@ export default function SubmitForm({ teams, members, status, onSubmitted }: Prop
   const [result, setResult] = useState<
     { type: "success" | "error"; text: string } | null
   >(null);
+  const [previous, setPrevious] = useState<
+    { body: string; date_key: string } | null
+  >(null);
+  const editorRef = useRef<UpdateEditorHandle>(null);
 
   const closed = status ? !status.isOpen : false;
+
+  // Fetch the selected person's most recent past update to help them recall.
+  useEffect(() => {
+    setPrevious(null);
+    if (!memberId) return;
+    let cancelled = false;
+    fetch(`/api/updates/previous?memberId=${encodeURIComponent(memberId)}`, {
+      cache: "no-store",
+    })
+      .then((r) => r.json())
+      .then((d) => {
+        if (!cancelled) setPrevious(d.previous ?? null);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [memberId]);
+
+  function addPreviousToUpdate() {
+    if (!previous) return;
+    const lines = previous.body.split("\n").filter((l) => l.trim().length > 0);
+    editorRef.current?.appendItems(lines, { keepVerbatimWhenEmpty: true });
+  }
 
   // Role is auto-detected from the picked name via member.team_id → team.name.
   const roleName = useMemo(() => {
@@ -100,9 +129,38 @@ export default function SubmitForm({ teams, members, status, onSubmitted }: Prop
         </div>
       </div>
 
+      {previous && (
+        <div className="field">
+          <div className="prev-panel">
+            <div className="row between" style={{ marginBottom: 8 }}>
+              <strong style={{ fontSize: "0.9rem" }}>
+                Your last update — {formatDateKey(previous.date_key)}
+              </strong>
+              <button
+                type="button"
+                className="btn small"
+                onClick={addPreviousToUpdate}
+                disabled={closed}
+              >
+                ＋ Add to my update
+              </button>
+            </div>
+            <div className="prev-body">{previous.body}</div>
+            <p className="note" style={{ marginTop: 6 }}>
+              Adds this below whatever you&apos;ve already written — then edit freely.
+            </p>
+          </div>
+        </div>
+      )}
+
       <div className="field">
         <label className="field-label">Daily Update</label>
-        <UpdateEditor value={body} onChange={setBody} disabled={closed} />
+        <UpdateEditor
+          ref={editorRef}
+          value={body}
+          onChange={setBody}
+          disabled={closed}
+        />
       </div>
 
       {result && (

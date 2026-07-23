@@ -1,6 +1,7 @@
 "use client";
 
-import { useRef } from "react";
+import { forwardRef, useImperativeHandle, useRef } from "react";
+import { appendItems, detectListStyle, STARTER_PHRASES } from "@/lib/editor";
 
 type Props = {
   value: string;
@@ -8,40 +9,61 @@ type Props = {
   disabled?: boolean;
 };
 
+export type UpdateEditorHandle = {
+  // Append items as new list lines at the end, continuing the current style.
+  appendItems: (items: string[], opts?: { keepVerbatimWhenEmpty?: boolean }) => void;
+};
+
 // Plain-text multiline editor. Newlines and manual bullets are preserved and
 // map cleanly to WhatsApp. Enter inserts a newline (default textarea behavior).
-export default function UpdateEditor({ value, onChange, disabled }: Props) {
-  const ref = useRef<HTMLTextAreaElement>(null);
+const UpdateEditor = forwardRef<UpdateEditorHandle, Props>(function UpdateEditor(
+  { value, onChange, disabled },
+  ref
+) {
+  const areaRef = useRef<HTMLTextAreaElement>(null);
+
+  function caretToEnd() {
+    requestAnimationFrame(() => {
+      const el = areaRef.current;
+      if (!el) return;
+      el.focus();
+      const end = el.value.length;
+      el.setSelectionRange(end, end);
+      el.scrollTop = el.scrollHeight;
+    });
+  }
+
+  // Append helper used by chips (internal) and the parent (yesterday's update).
+  function append(items: string[], opts?: { keepVerbatimWhenEmpty?: boolean }) {
+    onChange(appendItems(value, items, opts));
+    caretToEnd();
+  }
+
+  useImperativeHandle(ref, () => ({ appendItems: append }), [value]);
 
   function insertBullet() {
-    const el = ref.current;
-    if (!el) return;
-    const start = el.selectionStart;
-    const end = el.selectionEnd;
-    const before = value.slice(0, start);
-    // Add a leading newline unless we're at the start of a line.
-    const needsNewline = before.length > 0 && !before.endsWith("\n");
-    const bullet = `${needsNewline ? "\n" : ""}• `;
-    const next = before + bullet + value.slice(end);
-    onChange(next);
-    requestAnimationFrame(() => {
-      const pos = start + bullet.length;
-      el.focus();
-      el.setSelectionRange(pos, pos);
-    });
+    // Adds a fresh empty bullet line at the end, continuing the current style.
+    const base = value.replace(/\s+$/, "");
+    const style =
+      base.length === 0
+        ? { kind: "bullet" as const, bulletChar: "•", nextNumber: 1 }
+        : detectListStyle(base);
+    const marker =
+      style.kind === "ordered" ? `${style.nextNumber}. ` : `${style.bulletChar} `;
+    onChange(base.length === 0 ? marker : `${base}\n${marker}`);
+    caretToEnd();
   }
 
   function onKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
     // When pressing Enter on a bulleted line, start the next line with a bullet.
     if (e.key === "Enter" && !e.shiftKey) {
-      const el = ref.current;
+      const el = areaRef.current;
       if (!el) return;
       const start = el.selectionStart;
       const lineStart = value.lastIndexOf("\n", start - 1) + 1;
       const currentLine = value.slice(lineStart, start);
       if (currentLine.trimStart().startsWith("•")) {
         e.preventDefault();
-        // If the bullet line is empty, exit the bullet list instead.
         if (currentLine.trim() === "•") {
           const next = value.slice(0, lineStart) + value.slice(start);
           onChange(next);
@@ -75,11 +97,26 @@ export default function UpdateEditor({ value, onChange, disabled }: Props) {
           • Add bullet
         </button>
         <span className="note" style={{ marginTop: 0 }}>
-          Press Enter for a new line. Bullets continue automatically.
+          Tap a starter to add a bullet, then edit it.
         </span>
       </div>
+
+      <div className="chips" style={{ marginBottom: 10 }}>
+        {STARTER_PHRASES.map((p) => (
+          <button
+            key={p}
+            type="button"
+            className="chip"
+            disabled={disabled}
+            onClick={() => append([`${p} `])}
+          >
+            {p}
+          </button>
+        ))}
+      </div>
+
       <textarea
-        ref={ref}
+        ref={areaRef}
         value={value}
         disabled={disabled}
         onChange={(e) => onChange(e.target.value)}
@@ -88,4 +125,6 @@ export default function UpdateEditor({ value, onChange, disabled }: Props) {
       />
     </div>
   );
-}
+});
+
+export default UpdateEditor;

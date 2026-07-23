@@ -265,6 +265,54 @@ textarea:focus {
   font-size: 0.9rem;
 }
 
+/* Starter-phrase chips */
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.chip {
+  appearance: none;
+  border: 1px solid var(--border);
+  background: var(--panel-2);
+  color: var(--text);
+  border-radius: 999px;
+  padding: 6px 12px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.chip:hover:not(:disabled) {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.chip:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* Previous-update recall panel */
+.prev-panel {
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--accent);
+  border-radius: 10px;
+  padding: 12px 14px;
+}
+
+.prev-body {
+  white-space: pre-wrap;
+  line-height: 1.5;
+  font-size: 0.9rem;
+  color: var(--muted);
+  max-height: 180px;
+  overflow-y: auto;
+}
+
 /* Today board */
 .team-block {
   margin-bottom: 22px;

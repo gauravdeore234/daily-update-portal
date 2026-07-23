@@ -69,6 +69,20 @@ export function formatDateDay(date: Date = new Date()): string {
   }).format(date);
 }
 
+/** Format an IST date key ("2026-07-18") as "Fri, 18 Jul". */
+export function formatDateKey(dateKey: string): string {
+  const [y, m, d] = dateKey.split("-").map((n) => parseInt(n, 10));
+  if (!y || !m || !d) return dateKey;
+  // Noon UTC keeps the date stable regardless of timezone rendering.
+  const dt = new Date(Date.UTC(y, m - 1, d, 12));
+  return new Intl.DateTimeFormat("en-GB", {
+    timeZone: IST_TZ,
+    weekday: "short",
+    day: "numeric",
+    month: "short",
+  }).format(dt);
+}
+
 /** Current IST wall-clock time, e.g. "21:37". */
 export function formatISTTime(date: Date = new Date()): string {
   const p = getISTParts(date);

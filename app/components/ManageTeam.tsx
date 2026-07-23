@@ -155,25 +155,42 @@ export default function ManageTeam({ teams, members, onChanged }: Props) {
             </div>
 
             {teamMembers.map((m) => (
-              <div className="member-row" key={m.id}>
-                <input
-                  type="text"
-                  defaultValue={m.name}
-                  onBlur={(e) => {
-                    const v = e.target.value.trim();
-                    if (v && v !== m.name) call("rename_member", { id: m.id, name: v });
-                  }}
-                />
-                <button
-                  className="btn danger small"
-                  disabled={busy}
-                  onClick={() => {
-                    if (confirm(`Remove ${m.name}?`))
-                      call("delete_member", { id: m.id });
-                  }}
-                >
-                  Remove
-                </button>
+              <div key={m.id}>
+                <div className="member-row">
+                  <input
+                    type="text"
+                    defaultValue={m.name}
+                    onChange={() =>
+                      setMemberError((s) => ({ ...s, [m.id]: "" }))
+                    }
+                    onBlur={async (e) => {
+                      const v = e.target.value.trim();
+                      if (v && v !== m.name) {
+                        const r = await call("rename_member", { id: m.id, name: v });
+                        if (!r.ok)
+                          setMemberError((s) => ({ ...s, [m.id]: r.error ?? "" }));
+                      }
+                    }}
+                  />
+                  <button
+                    className="btn danger small"
+                    disabled={busy}
+                    onClick={() => {
+                      if (confirm(`Remove ${m.name}?`))
+                        call("delete_member", { id: m.id });
+                    }}
+                  >
+                    Remove
+                  </button>
+                </div>
+                {memberError[m.id] && (
+                  <div
+                    className="banner error"
+                    style={{ marginTop: 6, marginBottom: 6 }}
+                  >
+                    {memberError[m.id]}
+                  </div>
+                )}
               </div>
             ))}
 

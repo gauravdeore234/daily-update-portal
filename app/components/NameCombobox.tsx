@@ -1,17 +1,21 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import type { Member } from "../types";
+import type { Member, Team } from "../types";
 
 type Props = {
   members: Member[];
+  teams?: Team[];
   value: string | null; // selected member id
   onChange: (memberId: string | null) => void;
   disabled?: boolean;
 };
 
-// Search-as-you-type combobox over the roster for the selected role.
-export default function NameCombobox({ members, value, onChange, disabled }: Props) {
+// Search-as-you-type combobox over the full active roster. Each option shows a
+// muted role hint (the member's team) for confirmation.
+export default function NameCombobox({ members, teams, value, onChange, disabled }: Props) {
+  const teamName = (teamId: string) =>
+    teams?.find((t) => t.id === teamId)?.name ?? "";
   const [query, setQuery] = useState("");
   const [open, setOpen] = useState(false);
   const [activeIdx, setActiveIdx] = useState(0);
@@ -51,7 +55,7 @@ export default function NameCombobox({ members, value, onChange, disabled }: Pro
     <div className="combo" ref={boxRef}>
       <input
         type="text"
-        placeholder={disabled ? "Select a role first" : "Type your name…"}
+        placeholder={disabled ? "Submissions are closed" : "Type your name…"}
         value={query}
         disabled={disabled}
         onChange={(e) => {
@@ -93,7 +97,12 @@ export default function NameCombobox({ members, value, onChange, disabled }: Pro
                   pick(m);
                 }}
               >
-                {m.name}
+                <span>{m.name}</span>
+                {teamName(m.team_id) && (
+                  <span style={{ float: "right", opacity: 0.7, fontSize: "0.85em" }}>
+                    {teamName(m.team_id)}
+                  </span>
+                )}
               </div>
             ))
           )}

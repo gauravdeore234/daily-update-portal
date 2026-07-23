@@ -88,6 +88,7 @@ export async function POST(req: NextRequest) {
         const teamId = (body.teamId ?? "").trim();
         const name = (body.name ?? "").trim();
         if (!teamId || !name) return bad("Team and member name are required.");
+        if (await nameExists(supabase, name)) return bad(dupMessage(name));
         const { error } = await supabase
           .from("members")
           .insert({ team_id: teamId, name });
@@ -98,6 +99,7 @@ export async function POST(req: NextRequest) {
         const id = (body.id ?? "").trim();
         const name = (body.name ?? "").trim();
         if (!id || !name) return bad("Member id and name are required.");
+        if (await nameExists(supabase, name, id)) return bad(dupMessage(name));
         const { error } = await supabase.from("members").update({ name }).eq("id", id);
         if (error) return fail(error.message);
         break;
@@ -128,6 +130,24 @@ export async function POST(req: NextRequest) {
   }
 
   return NextResponse.json({ ok: true });
+}
+
+// Case-insensitive check for an existing member with the same name. Names must
+// be globally unique so the Submit form can auto-detect a role from the name.
+// `excludeId` skips the member being renamed.
+async function nameExists(
+  supabase: ReturnType<typeof getServerSupabase>,
+  name: string,
+  excludeId?: string
+): Promise<boolean> {
+  let query = supabase.from("members").select("id").ilike("name", name);
+  if (excludeId) query = query.neq("id", excludeId);
+  const { data } = await query.limit(1);
+  return Boolean(data && data.length > 0);
+}
+
+function dupMessage(name: string): string {
+  return `A member named "${name}" already exists. Please use a distinguishing name (e.g. "${name} K").`;
 }
 
 function bad(message: string) {

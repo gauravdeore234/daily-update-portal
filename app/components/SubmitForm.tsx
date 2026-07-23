@@ -13,7 +13,6 @@ type Props = {
 };
 
 export default function SubmitForm({ teams, members, status, onSubmitted }: Props) {
-  const [teamId, setTeamId] = useState("");
   const [memberId, setMemberId] = useState<string | null>(null);
   const [body, setBody] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -23,10 +22,13 @@ export default function SubmitForm({ teams, members, status, onSubmitted }: Prop
 
   const closed = status ? !status.isOpen : false;
 
-  const teamMembers = useMemo(
-    () => members.filter((m) => m.team_id === teamId),
-    [members, teamId]
-  );
+  // Role is auto-detected from the picked name via member.team_id → team.name.
+  const roleName = useMemo(() => {
+    if (!memberId) return "";
+    const m = members.find((x) => x.id === memberId);
+    if (!m) return "";
+    return teams.find((t) => t.id === m.team_id)?.name ?? "";
+  }, [memberId, members, teams]);
 
   async function submit() {
     setResult(null);
@@ -81,32 +83,21 @@ export default function SubmitForm({ teams, members, status, onSubmitted }: Prop
       </div>
 
       <div className="field">
-        <label className="field-label">Role</label>
-        <select
-          value={teamId}
+        <label className="field-label">Name</label>
+        <NameCombobox
+          members={members}
+          teams={teams}
+          value={memberId}
+          onChange={setMemberId}
           disabled={closed}
-          onChange={(e) => {
-            setTeamId(e.target.value);
-            setMemberId(null);
-          }}
-        >
-          <option value="">Select a role…</option>
-          {teams.map((t) => (
-            <option key={t.id} value={t.id}>
-              {t.name}
-            </option>
-          ))}
-        </select>
+        />
       </div>
 
       <div className="field">
-        <label className="field-label">Name</label>
-        <NameCombobox
-          members={teamMembers}
-          value={memberId}
-          onChange={setMemberId}
-          disabled={closed || !teamId}
-        />
+        <label className="field-label">Role</label>
+        <div className="readonly-box" style={{ color: roleName ? undefined : "var(--muted)" }}>
+          {roleName || "Auto-detected once you select your name"}
+        </div>
       </div>
 
       <div className="field">

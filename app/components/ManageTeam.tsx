@@ -16,6 +16,9 @@ export default function ManageTeam({ teams, members, onChanged }: Props) {
   const [busy, setBusy] = useState(false);
   const [newTeam, setNewTeam] = useState("");
   const [newMemberName, setNewMemberName] = useState<Record<string, string>>({});
+  // Inline error shown right at the add-member row of a specific team, so a
+  // scrolled-down user sees why the button "did nothing".
+  const [memberError, setMemberError] = useState<Record<string, string>>({});
 
   async function call(action: string, payload: Record<string, string>) {
     setError(null);
@@ -31,15 +34,17 @@ export default function ManageTeam({ teams, members, onChanged }: Props) {
       });
       const data = await res.json();
       if (!res.ok) {
-        setError(data.error ?? "Request failed.");
+        const msg = data.error ?? "Request failed.";
+        setError(msg);
         if (res.status === 401) setUnlocked(false);
-        return false;
+        return { ok: false, error: msg };
       }
       onChanged();
-      return true;
+      return { ok: true };
     } catch {
-      setError("Network error.");
-      return false;
+      const msg = "Network error.";
+      setError(msg);
+      return { ok: false, error: msg };
     } finally {
       setBusy(false);
     }
@@ -114,7 +119,8 @@ export default function ManageTeam({ teams, members, onChanged }: Props) {
             className="btn small"
             disabled={busy || !newTeam.trim()}
             onClick={async () => {
-              if (await call("add_team", { name: newTeam.trim() })) setNewTeam("");
+              if ((await call("add_team", { name: newTeam.trim() })).ok)
+                setNewTeam("");
             }}
           >
             Add team
@@ -176,9 +182,10 @@ export default function ManageTeam({ teams, members, onChanged }: Props) {
                 type="text"
                 placeholder="New member name"
                 value={newMemberName[team.id] ?? ""}
-                onChange={(e) =>
-                  setNewMemberName((s) => ({ ...s, [team.id]: e.target.value }))
-                }
+                onChange={(e) => {
+                  setNewMemberName((s) => ({ ...s, [team.id]: e.target.value }));
+                  setMemberError((s) => ({ ...s, [team.id]: "" }));
+                }}
                 style={{ flex: 1 }}
               />
               <button
@@ -186,13 +193,23 @@ export default function ManageTeam({ teams, members, onChanged }: Props) {
                 disabled={busy || !(newMemberName[team.id] ?? "").trim()}
                 onClick={async () => {
                   const name = (newMemberName[team.id] ?? "").trim();
-                  if (await call("add_member", { teamId: team.id, name }))
+                  const r = await call("add_member", { teamId: team.id, name });
+                  if (r.ok) {
                     setNewMemberName((s) => ({ ...s, [team.id]: "" }));
+                    setMemberError((s) => ({ ...s, [team.id]: "" }));
+                  } else {
+                    setMemberError((s) => ({ ...s, [team.id]: r.error ?? "" }));
+                  }
                 }}
               >
                 Add member
               </button>
             </div>
+            {memberError[team.id] && (
+              <div className="banner error" style={{ marginTop: 10, marginBottom: 0 }}>
+                {memberError[team.id]}
+              </div>
+            )}
           </div>
         );
       })}

@@ -2,13 +2,14 @@ import { NextRequest, NextResponse } from "next/server";
 import { Resend } from "resend";
 import { getServerSupabase } from "@/lib/supabase";
 import { buildGroupedMessages } from "@/lib/collate";
-import { formatDateDay, todayKey } from "@/lib/time";
+import { formatDateKey, yesterdayKey } from "@/lib/time";
 
 export const dynamic = "force-dynamic";
 
-// Triggered by Vercel Cron at 16:45 UTC (22:15 IST). Vercel automatically sends
-// `Authorization: Bearer $CRON_SECRET`; we reject anything else so the endpoint
-// can't be fired arbitrarily.
+// Triggered by Vercel Cron at 18:45 UTC (00:15 IST next day). It archives the
+// day that just ended, so it targets *yesterday's* IST date key. Vercel sends
+// `Authorization: Bearer $CRON_SECRET`; we reject anything else. A `?date=`
+// override (YYYY-MM-DD) is allowed for manual testing.
 export async function GET(req: NextRequest) {
   const secret = process.env.CRON_SECRET;
   const auth = req.headers.get("authorization");
@@ -17,7 +18,7 @@ export async function GET(req: NextRequest) {
   }
 
   const supabase = getServerSupabase();
-  const dateKey = todayKey();
+  const dateKey = req.nextUrl.searchParams.get("date")?.trim() || yesterdayKey();
 
   const { data: teams, error: teamErr } = await supabase
     .from("teams")
@@ -39,6 +40,7 @@ export async function GET(req: NextRequest) {
   const groups = buildGroupedMessages({
     teams: teams ?? [],
     updates: updates ?? [],
+    date: new Date(`${dateKey}T12:00:00Z`),
   });
 
   // Both messages in one email, each under its group heading.
@@ -61,7 +63,7 @@ export async function GET(req: NextRequest) {
   const { error: sendErr } = await resend.emails.send({
     from,
     to,
-    subject: `Daily Update Archive — ${formatDateDay()}`,
+    subject: `Daily Update Archive — ${formatDateKey(dateKey)}`,
     text: message,
     html: `<pre style="font-family:ui-monospace,Menlo,Consolas,monospace;white-space:pre-wrap;font-size:14px;line-height:1.5">${escapeHtml(
       message

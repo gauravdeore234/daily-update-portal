@@ -3,7 +3,7 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "Daily Update",
-  description: "Submit your daily update. Closes at 10:00 PM IST.",
+  description: "Submit your daily update. Resets each midnight IST.",
 };
 
 export const viewport: Viewport = {

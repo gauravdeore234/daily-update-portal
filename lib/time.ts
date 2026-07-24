@@ -52,10 +52,19 @@ export function todayKey(date: Date = new Date()): string {
   return `${p.year}-${mm}-${dd}`;
 }
 
-/** True while submissions are open (before 10:00 PM IST). */
-export function isSubmissionOpen(date: Date = new Date()): boolean {
-  const p = getISTParts(date);
-  return p.hour < CUTOFF_HOUR;
+/** Submissions have no time cutoff — always open. */
+export function isSubmissionOpen(_date: Date = new Date()): boolean {
+  return true;
+}
+
+/** IST date key for the day before the given date, e.g. "2026-07-21". */
+export function yesterdayKey(date: Date = new Date()): string {
+  const [y, m, d] = todayKey(date).split("-").map((n) => parseInt(n, 10));
+  const dt = new Date(Date.UTC(y, m - 1, d, 12));
+  dt.setUTCDate(dt.getUTCDate() - 1);
+  const mm = String(dt.getUTCMonth() + 1).padStart(2, "0");
+  const dd = String(dt.getUTCDate()).padStart(2, "0");
+  return `${dt.getUTCFullYear()}-${mm}-${dd}`;
 }
 
 /** Human-friendly date + day, e.g. "Wednesday, 22 July 2026". */

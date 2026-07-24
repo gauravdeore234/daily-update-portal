@@ -72,7 +72,7 @@ export default function Page() {
           <StatusPill status={status} />
         </div>
         <p className="subtitle">
-          This form stops accepting responses at 10:00 PM IST.
+          Submit your daily update. Resets to a clean slate each midnight IST.
         </p>
       </div>
 

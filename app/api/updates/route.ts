@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSupabase } from "@/lib/supabase";
-import { isSubmissionOpen, todayKey } from "@/lib/time";
+import { todayKey } from "@/lib/time";
 
 export const dynamic = "force-dynamic";
 
@@ -20,16 +20,8 @@ export async function GET() {
   return NextResponse.json({ updates: data ?? [] });
 }
 
-// POST: upsert one person's update for today. Server re-checks the cutoff, so a
-// tampered client clock cannot get past 10 PM IST.
+// POST: upsert one person's update for today (no time cutoff — always open).
 export async function POST(req: NextRequest) {
-  if (!isSubmissionOpen()) {
-    return NextResponse.json(
-      { error: "Submissions are closed for today (after 10:00 PM IST)." },
-      { status: 403 }
-    );
-  }
-
   let payload: { memberId?: string; body?: string };
   try {
     payload = await req.json();

@@ -5,6 +5,7 @@ import type { Member, Status, Team } from "../types";
 import NameCombobox from "./NameCombobox";
 import UpdateEditor, { UpdateEditorHandle } from "./UpdateEditor";
 import { formatDateKey } from "@/lib/time";
+import { stripMarker } from "@/lib/editor";
 
 type Props = {
   teams: Team[];
@@ -45,10 +46,20 @@ export default function SubmitForm({ teams, members, status, onSubmitted }: Prop
     };
   }, [memberId]);
 
-  function addPreviousToUpdate() {
-    if (!previous) return;
-    const lines = previous.body.split("\n").filter((l) => l.trim().length > 0);
-    editorRef.current?.appendItems(lines, { keepVerbatimWhenEmpty: true });
+  const previousLines = useMemo(
+    () =>
+      previous
+        ? previous.body.split("\n").filter((l) => l.trim().length > 0)
+        : [],
+    [previous]
+  );
+
+  function addLine(line: string) {
+    editorRef.current?.appendItems([line], { keepVerbatimWhenEmpty: true });
+  }
+
+  function addAllLines() {
+    editorRef.current?.appendItems(previousLines, { keepVerbatimWhenEmpty: true });
   }
 
   // Role is auto-detected from the picked name via member.team_id → team.name.
@@ -129,25 +140,39 @@ export default function SubmitForm({ teams, members, status, onSubmitted }: Prop
         </div>
       </div>
 
-      {previous && (
+      {previous && previousLines.length > 0 && (
         <div className="field">
           <div className="prev-panel">
-            <div className="row between" style={{ marginBottom: 8 }}>
+            <div className="row between" style={{ marginBottom: 10 }}>
               <strong style={{ fontSize: "0.9rem" }}>
                 Your last update — {formatDateKey(previous.date_key)}
               </strong>
               <button
                 type="button"
-                className="btn small"
-                onClick={addPreviousToUpdate}
+                className="btn secondary small"
+                onClick={addAllLines}
                 disabled={closed}
               >
-                ＋ Add to my update
+                ＋ Add all
               </button>
             </div>
-            <div className="prev-body">{previous.body}</div>
-            <p className="note" style={{ marginTop: 6 }}>
-              Adds this below whatever you&apos;ve already written — then edit freely.
+            {previousLines.map((line, i) => (
+              <div className="prev-line" key={i}>
+                <button
+                  type="button"
+                  className="prev-add"
+                  onClick={() => addLine(line)}
+                  disabled={closed}
+                  title="Add this line to my update"
+                  aria-label="Add this line"
+                >
+                  ＋
+                </button>
+                <span className="prev-line-text">{stripMarker(line)}</span>
+              </div>
+            ))}
+            <p className="note" style={{ marginTop: 8 }}>
+              Tap ＋ on any line to add it below your current text — then edit freely.
             </p>
           </div>
         </div>

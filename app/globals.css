@@ -304,13 +304,48 @@ textarea:focus {
   padding: 12px 14px;
 }
 
-.prev-body {
-  white-space: pre-wrap;
-  line-height: 1.5;
+.prev-line {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 6px 0;
+  border-top: 1px solid var(--border);
+}
+
+.prev-line:first-of-type {
+  border-top: none;
+}
+
+.prev-line-text {
+  line-height: 1.45;
   font-size: 0.9rem;
-  color: var(--muted);
-  max-height: 180px;
-  overflow-y: auto;
+  color: var(--text);
+  padding-top: 3px;
+}
+
+.prev-add {
+  flex: 0 0 auto;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--panel);
+  color: var(--accent);
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.prev-add:hover:not(:disabled) {
+  background: var(--accent);
+  color: white;
+  border-color: var(--accent);
+}
+
+.prev-add:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
 }
 
 /* Today board */

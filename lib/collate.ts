@@ -1,5 +1,5 @@
 import type { Team, UpdateRow } from "./supabase";
-import { formatDateDay } from "./time";
+import { formatDMY } from "./time";
 
 export type CollateInput = {
   teams: Pick<Team, "id" | "name" | "sort_order">[];
@@ -13,7 +13,7 @@ export type CollateInput = {
  * so the pasted message and the archived record are always identical.
  */
 export function buildCollatedMessage({ teams, updates, date }: CollateInput): string {
-  const header = `*Daily Update — ${formatDateDay(date)}*`;
+  const header = `*Update : ${formatDMY(date)}*`;
   const sortedTeams = [...teams].sort((a, b) => a.sort_order - b.sort_order);
 
   const sections: string[] = [];
@@ -26,17 +26,19 @@ export function buildCollatedMessage({ teams, updates, date }: CollateInput): st
     const byPerson = new Map<string, string>();
     for (const u of teamUpdates) byPerson.set(u.member_name, u.body);
 
-    const lines: string[] = [`*${team.name}*`];
+    // Each person: "Name:" then two blank lines, then their items verbatim
+    // (original numbering/bullets preserved).
+    const people: string[] = [];
     for (const [name, body] of byPerson) {
-      lines.push("");
-      lines.push(`${name}:`);
       const bodyLines = body
         .split("\n")
         .map((l) => l.trimEnd())
         .filter((l) => l.length > 0);
-      for (const bl of bodyLines) lines.push(bl);
+      people.push(`${name}:\n\n\n${bodyLines.join("\n")}`);
     }
-    sections.push(lines.join("\n"));
+
+    // Team header, blank line, then people separated by two blank lines.
+    sections.push(`*${team.name}*\n\n${people.join("\n\n\n")}`);
   }
 
   if (sections.length === 0) {

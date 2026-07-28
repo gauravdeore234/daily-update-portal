@@ -78,6 +78,14 @@ export function formatDateDay(date: Date = new Date()): string {
   }).format(date);
 }
 
+/** Format a date as IST "DD-MM-YYYY", e.g. "27-07-2026". */
+export function formatDMY(date: Date = new Date()): string {
+  const p = getISTParts(date);
+  const dd = String(p.day).padStart(2, "0");
+  const mm = String(p.month).padStart(2, "0");
+  return `${dd}-${mm}-${p.year}`;
+}
+
 /** Format an IST date key ("2026-07-18") as "Fri, 18 Jul". */
 export function formatDateKey(dateKey: string): string {
   const [y, m, d] = dateKey.split("-").map((n) => parseInt(n, 10));

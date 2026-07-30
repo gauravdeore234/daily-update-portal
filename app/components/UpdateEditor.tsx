@@ -102,6 +102,14 @@ const UpdateEditor = forwardRef<UpdateEditorHandle, Props>(function UpdateEditor
       </div>
 
       <div className="chips" style={{ marginBottom: 10 }}>
+        <button
+          type="button"
+          className="chip leave"
+          disabled={disabled}
+          onClick={() => append(["On leave"])}
+        >
+          On leave
+        </button>
         {STARTER_PHRASES.map((p) => (
           <button
             key={p}

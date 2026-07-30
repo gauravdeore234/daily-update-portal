@@ -295,6 +295,19 @@ textarea:focus {
   cursor: not-allowed;
 }
 
+/* "On leave" status chip — subtly distinct amber tint */
+.chip.leave {
+  background: rgba(245, 158, 11, 0.12);
+  border-color: rgba(245, 158, 11, 0.45);
+  color: var(--amber);
+}
+
+.chip.leave:hover:not(:disabled) {
+  background: rgba(245, 158, 11, 0.22);
+  border-color: var(--amber);
+  color: var(--amber);
+}
+
 /* Previous-update recall panel */
 .prev-panel {
   background: var(--panel-2);
